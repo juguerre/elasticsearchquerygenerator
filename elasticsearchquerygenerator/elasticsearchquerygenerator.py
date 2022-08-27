@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 
 class Operation(object):
@@ -107,7 +107,7 @@ class ElasticSearchQuery(object):
     ):
         fragment = {"term": {field: value}}
         self.base_query["query"]["bool"][operation].append(fragment)
-        return self.base_query
+        return self._return_non_empty(self.base_query)
 
     def add_aggregation(
         self,
@@ -130,7 +130,7 @@ class ElasticSearchQuery(object):
             for key, value in item.items():
                 fragment["aggs"][key] = value
         self.base_query["aggs"] = fragment["aggs"]
-        return self.base_query
+        return self._return_non_empty(self.base_query)
 
     def add_geoqueries(
         self,
@@ -143,24 +143,22 @@ class ElasticSearchQuery(object):
         radius = str(radius) + "mi"
         _ = {"geo_distance": {"distance": radius, field: {"lat": lat, "lon": lon}}}
         self.base_query["query"]["bool"][operation].append(_)
-        return self.base_query
+        return self._return_non_empty(self.base_query)
 
-    def wildcard(
-        self, field: str = None, value=None, boost=None, operation: str = None
-    ):
+    def wildcard(self, field: str = None, value=None, boost=None, operation: str = None):
         fragment = {"wildcard": {field: {"value": value}}}
         if boost is None:
             self.base_query["query"]["bool"][operation].append(fragment)
-            return self.base_query
+            return self._return_non_empty(self.base_query)
         else:
             fragment["wildcard"][field]["boost"] = boost
             self.base_query["query"]["bool"][operation].append(fragment)
-            return self.base_query
+            return self._return_non_empty(self.base_query)
 
     def exists(self, field: str = None, operation: str = Operation.MUST):
         fragment = {"exists": {"field": field}}
         self.base_query["query"]["bool"][operation].append(fragment)
-        return self.base_query
+        return self._return_non_empty(self.base_query)
 
     def query_string(
         self,
@@ -175,7 +173,7 @@ class ElasticSearchQuery(object):
             }
         }
         self.base_query["query"]["bool"][operation].append(fragment)
-        return self.base_query
+        return self._return_non_empty(self.base_query)
 
     def add_geo_aggreation(
         self,
@@ -199,7 +197,7 @@ class ElasticSearchQuery(object):
                 ],
             }
         }
-        return self.base_query
+        return self._return_non_empty(self.base_query)
 
     def match_phrase_prefix(
         self,
@@ -216,7 +214,7 @@ class ElasticSearchQuery(object):
         if analyzer is not None:
             fragment["match_phrase_prefix"][field]["analyzer"] = analyzer
         self.base_query["query"]["bool"][operation].append(fragment)
-        return self.base_query
+        return self._return_non_empty(self.base_query)
 
     def autocomplete_1(
         self,
@@ -227,8 +225,29 @@ class ElasticSearchQuery(object):
         operation: str = Operation.MUST,
     ):
         self.match_phrase_prefix(field=field, value=value, operation=operation)
-        self.add_aggregation(
-            field=field, size=size, sort=sort, aggregate_name="auto_complete"
-        )
+        self.add_aggregation(field=field, size=size, sort=sort, aggregate_name="auto_complete")
         query = self.complete_aggregation()
-        return query
+        return self._return_non_empty(query)
+
+    @staticmethod
+    def _return_non_empty(element: Union[dict, list]):
+        temp_dict = {}
+        temp_lst = []
+        if isinstance(element, dict):
+            for k, v in element.items():
+                if v and isinstance(v, (dict, list)):
+                    return_element = ElasticSearchQuery._return_non_empty(v)
+                    if return_element:
+                        temp_dict[k] = return_element
+                elif not isinstance(v, (dict, list)):
+                    temp_dict[k] = v
+        else:
+            for v in element:
+                if v and isinstance(v, (dict, list)):
+                    return_element = ElasticSearchQuery._return_non_empty(v)
+                    if return_element:
+                        temp_lst.append(return_element)
+                else:
+                    temp_lst.append(v)
+
+        return temp_dict if temp_dict else temp_lst

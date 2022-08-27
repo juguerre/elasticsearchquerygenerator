@@ -1,1 +1,6 @@
-from elasticsearchquerygenerator.elasticsearchquerygenerator import ElasticSearchQuery
+from elasticsearchquerygenerator.elasticsearchquerygenerator import (
+    ElasticSearchQuery,
+    Operation,
+    AggType,
+    Sort,
+)
