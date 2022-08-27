@@ -52,34 +52,34 @@ pip install elasticsearchquerygenerator
 ## Usage
 
 ```python
-from elasticsearchquerygenerator.elasticsearchquerygenerator import ElasticSearchQuery
+from elasticsearchquerygenerator.elasticsearchquerygenerator import ElasticSearchQuery, Operation, AggType
 import json
 
 
 def main():
-    helper = ElasticSearchQuery(size=100, BucketName="MyBuckets")
+    helper = ElasticSearchQuery(size=100, bucket_name="MyBuckets")
 
     # match phrase
-    query = helper.match_phrase(field="myfeild", value="myvalue", operation='must')
+    helper.match_phrase(field="myfeild", value="myvalue", operation=Operation.MUST)
 
     # terms
-    query = helper.terms(field="myfeild", value="myvalue", operation='must')
+    helper.terms(field="myfeild", value="myvalue", operation=Operation.MUST)
 
-    # Feild Exists
-    query = helper.exists(field='comp feild', operation="must")
+    # Field Exists
+    helper.exists(field='comp feild', operation=Operation.MUST)
 
     # Match
-    query = helper.match(field="MMMMM", value="myvalue", operation='must')
+    helper.match(field="MMMMM", value="myvalue", operation=Operation.MUST)
 
     # Geo Queires
-    query = helper.add_geoqueries(radius="100", lat="22", lon="33")
+    helper.add_geoqueries(radius="100", lat="22", lon="33")
 
     # Aggreation
-    helper.add_aggregation(aggregate_name="FirstName", field="field1", agg_type='terms', sort='desc', size=3)
-    helper.add_aggregation(aggregate_name="SecondName", field="field2", agg_type='terms', sort='desc', size=3)
-    helper.add_aggregation(aggregate_name="ThirdName", field="field3", agg_type='terms', sort='desc', size=3)
-    query = helper.complete_aggregation()
-    query = helper.query_string(default_field="DEFAULT", query="X OR  Y", operation='must')
+    helper.add_aggregation(aggregate_name="FirstName", field="field1", agg_type=AggType.TERMS, sort='desc', size=3)
+    helper.add_aggregation(aggregate_name="SecondName", field="field2", agg_type=AggType.TERMS, sort='desc', size=3)
+    helper.add_aggregation(aggregate_name="ThirdName", field="field3", agg_type=AggType.TERMS, sort='desc', size=3)
+    helper.complete_aggregation()
+    helper.query_string(default_field="DEFAULT", query="X OR Y", operation=Operation.MUST)
 
     query = helper.add_geo_aggreation(field="AAAA", lat="22", lon="43", aggregate_name="my_distance")
 
@@ -227,17 +227,17 @@ if __name__ == "__main__":
 ### Example 2
 
 ```python
-from elasticsearchquerygenerator.elasticsearchquerygenerator import ElasticSearchQuery
+from elasticsearchquerygenerator.elasticsearchquerygenerator import ElasticSearchQuery, Sort
 import json
 
 def autocomplete():
-    helper = ElasticSearchQuery(size=0, BucketName="MyBuckets")
-    query  = helper.autocomplete_1(field="title",value="n", size=25,sort='desc')
+    helper = ElasticSearchQuery(size=0, bucket_name="MyBuckets")
+    query  = helper.autocomplete_1(field="title",value="n", size=25,sort=Sort.DESC)
     print(json.dumps(query, indent=3))
 
 
 if __name__ == "__main__":
-    main(autocomplete
+    autocomplete()
 
 ```
 ```json

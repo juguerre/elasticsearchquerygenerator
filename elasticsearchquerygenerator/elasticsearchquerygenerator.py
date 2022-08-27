@@ -5,6 +5,7 @@ class Operation(object):
     SHOULD = "should"
     MUST = "must"
     FILTER = "filter"
+    MUST_NOT = "must_not"
 
 
 class AggType(object):
