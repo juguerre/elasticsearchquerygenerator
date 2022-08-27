@@ -1,0 +1,5 @@
+build
+dist
+elasticsearchquerygenerator.egg-info
+.idea
+*.pyc

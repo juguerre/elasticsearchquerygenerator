@@ -1,0 +1,1 @@
+from elasticsearchquerygenerator.elasticsearchquerygenerator import ElasticSearchQuery

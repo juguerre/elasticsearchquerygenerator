@@ -1,236 +1,234 @@
-__AUTHOR__ = "Soumil Nitin Shah"
-__EMAIL__ = "shahsoumil519@gmail.com"
+from typing import List
 
 
-try:
-    import os
-    import sys
-    import json
-    print("Import : {} OK ".format(__file__))
-except Exception as e:
-    print("Some modules are missing {} ".format(e))
+class Operation(object):
+    SHOULD = "should"
+    MUST = "must"
+    FILTER = "filter"
+
+
+class AggType(object):
+    TERMS = "terms"
+
+
+class Sort(object):
+    ASC = "asc"
+    DESC = "des"
 
 
 class ElasticSearchQuery(object):
+    def __init__(
+        self,
+        size: int = 10,
+        bucket_name: str = None,
+        source: List[str] = None,
+        min_score: float = 0.5,
+    ):
+        """
 
-    def __init__(self, size=10, BucketName=None, source=[], min_score=0.5):
-
-        """Constructor """
+        :param size:
+        :param bucket_name:
+        :param source:
+        :param min_score:
+        """
 
         self.size = size
-        self.BucketName = BucketName
+        self.bucket_name = bucket_name
         self.min_score = min_score
-        self.source = source
-        self.baseQuery = {
-            "_source":source,
-            "size":self.size,
+        self.source = source if source else []
+        self.base_query = {
+            "_source": source,
+            "size": self.size,
             "min_score": self.min_score,
-            "query": {
-                "bool": {
-                    "must": [],
-                    "filter": [],
-                    "should": [],
-                    "must_not": []
-                }
-            }
+            "query": {"bool": {"must": [], "filter": [], "should": [], "must_not": []}},
         }
-        self.GeoBaseQuery =  {
-            "_source":self.source,
-            "size":self.size,
-            "query": {
-                "bool" : {
-                    "must":{ "match_all":{}},
-                    "should":[],
-                    "filter": {}
-                }
-            }
+        self.geo_base_query = {
+            "_source": self.source,
+            "size": self.size,
+            "query": {"bool": {"must": {"match_all": {}}, "should": [], "filter": {}}},
         }
         self.aggtem = []
         self.base_higghlight = {
-            "pre_tags":[
-                "<em>"
-            ],
-            "post_tags":[
-                "</em>"
-            ],
-            "tags_schema":"styled",
-            "fields":{
-
-            }
+            "pre_tags": ["<em>"],
+            "post_tags": ["</em>"],
+            "tags_schema": "styled",
+            "fields": {},
         }
 
-    def match(self,field=None, value=None, boost=None, operation='should',analyzer=None):
+    def match(
+        self,
+        field: str = None,
+        value: str = None,
+        boost: float = None,
+        operation: str = "should",
+        analyzer: str = None,
+    ):
 
-        _ = {
-            "match": {
-                field: {
-                    "query": value
-                }
-            }
-        }
+        fragment = {"match": {field: {"query": value}}}
         if boost is None:
-            self.baseQuery["query"]["bool"][operation].append(_)
-
-        if boost is not None:
-            _["match"][field]["boost"] = boost
-
-        if analyzer is not None:
-            _["match"][field]["analyzer"] = analyzer
-
-        self.baseQuery["query"]["bool"][operation].append(_)
-
-        return self.baseQuery
-
-    def match_phrase(self, field=None, value=None, boost=None, operation='should',analyzer=None):
-        _ = {
-            "match_phrase": {
-                field: {
-                    "query": value
-                }
-            }
-        }
-
-        if boost is None:
-            self.baseQuery["query"]["bool"][operation].append(_)
-
-        if boost is not None:
-            _["match_phrase"][field]["boost"] = boost
-
-        if analyzer is not None:
-            _["match_phrase"][field]["analyzer"] = analyzer
-
-        self.baseQuery["query"]["bool"][operation].append(_)
-
-        return self.baseQuery
-
-    def terms(self,field=None, value=None, boost=None, operation='should'):
-
-        _ = {"term" :{
-            field : value
-        }
-        }
-        self.baseQuery["query"]["bool"][operation].append(_)
-        return self.baseQuery
-
-    def add_aggreation(self, aggregate_name=None,
-                       field=None,
-                       type='terms',
-                       sort='desc',
-                       size = 10):
-
-        _ = {
-            aggregate_name:{
-                type: {
-                    "field": field,
-                    "order" :
-                        {"_count" :
-                             sort
-                         },
-                    "size": size
-
-                }
-            }
-        }
-        self.aggtem.append(_)
-
-    def complete_aggreation(self):
-        _ = {
-            "aggs":{
-
-            }
-        }
-        for item in self.aggtem:
-            for key,value in item.items():
-                _["aggs"][key] = value
-        self.baseQuery["aggs"] = _["aggs"]
-        return self.baseQuery
-
-    def add_geoqueries(self, radius=None, lat=None, lon=None, field=None, operation='filter'):
-        radius = str(radius) + "mi"
-        _ = {
-            "geo_distance" : {
-                "distance": radius,
-                field : {
-                    "lat": lat,
-                    "lon": lon
-                }
-            }}
-        self.baseQuery["query"]["bool"][operation].append(_)
-        return self.baseQuery
-
-    def wildcard(self,field=None, value=None, boost=None, operation=None):
-        _ =  {
-            "wildcard":{
-                field:{
-                    "value":value
-
-                }
-            }
-        }
-        if boost is None:
-            self.baseQuery["query"]["bool"][operation].append(_)
-            return self.baseQuery
+            self.base_query["query"]["bool"][operation].append(fragment)
         else:
-            _["wildcard"][field]["boost"] = boost
-            self.baseQuery["query"]["bool"][operation].append(_)
-            return self.baseQuery
+            fragment["match"][field]["boost"] = boost
 
-    def exists(self,field=None, operation="must"):
+        if analyzer:
+            fragment["match"][field]["analyzer"] = analyzer
 
-        _ = {
-            "exists": {
-                "field": field
+        self.base_query["query"]["bool"][operation].append(fragment)
+
+        return self.base_query
+
+    def match_phrase(
+        self,
+        field: str = None,
+        value: str = None,
+        boost: float = None,
+        operation: str = "should",
+        analyzer: str = None,
+    ):
+        fragment = {"match_phrase": {field: {"query": value}}}
+        if boost:
+            self.base_query["query"]["bool"][operation].append(fragment)
+        else:
+            fragment["match_phrase"][field]["boost"] = boost
+
+        if analyzer:
+            fragment["match_phrase"][field]["analyzer"] = analyzer
+
+        self.base_query["query"]["bool"][operation].append(fragment)
+
+        return self.base_query
+
+    def terms(
+        self,
+        field: str = None,
+        value: str = None,
+        boost: float = None,
+        operation: str = "should",
+    ):
+        fragment = {"term": {field: value}}
+        self.base_query["query"]["bool"][operation].append(fragment)
+        return self.base_query
+
+    def add_aggregation(
+        self,
+        aggregate_name: str = None,
+        field: str = None,
+        agg_type: str = "terms",
+        sort: str = "desc",
+        size: int = 10,
+    ):
+        fragment = {
+            aggregate_name: {
+                agg_type: {"field": field, "order": {"_count": sort}, "size": size}
             }
         }
-        self.baseQuery["query"]["bool"][operation].append(_)
-        return  self.baseQuery
+        self.aggtem.append(fragment)
 
-    def query_string(self, default_field=None, query=None, operation="should"):
-        _ = {
-            "query_string":{
+    def complete_aggregation(self):
+        fragment = {"aggs": {}}
+        for item in self.aggtem:
+            for key, value in item.items():
+                fragment["aggs"][key] = value
+        self.base_query["aggs"] = fragment["aggs"]
+        return self.base_query
+
+    def add_geoqueries(
+        self,
+        radius: str = None,
+        lat: str = None,
+        lon: str = None,
+        field: str = None,
+        operation: str = Operation.FILTER,
+    ):
+        radius = str(radius) + "mi"
+        _ = {"geo_distance": {"distance": radius, field: {"lat": lat, "lon": lon}}}
+        self.base_query["query"]["bool"][operation].append(_)
+        return self.base_query
+
+    def wildcard(
+        self, field: str = None, value=None, boost=None, operation: str = None
+    ):
+        fragment = {"wildcard": {field: {"value": value}}}
+        if boost is None:
+            self.base_query["query"]["bool"][operation].append(fragment)
+            return self.base_query
+        else:
+            fragment["wildcard"][field]["boost"] = boost
+            self.base_query["query"]["bool"][operation].append(fragment)
+            return self.base_query
+
+    def exists(self, field: str = None, operation: str = Operation.MUST):
+        fragment = {"exists": {"field": field}}
+        self.base_query["query"]["bool"][operation].append(fragment)
+        return self.base_query
+
+    def query_string(
+        self,
+        default_field: str = None,
+        query: str = None,
+        operation: str = Operation.SHOULD,
+    ):
+        fragment = {
+            "query_string": {
                 "default_field": default_field,
-                "query":"{}".format(query)
+                "query": f"{query}",
             }
         }
-        self.baseQuery["query"]["bool"][operation].append(_)
-        return self.baseQuery
+        self.base_query["query"]["bool"][operation].append(fragment)
+        return self.base_query
 
-    def add_geo_aggreation(self, field=None,lat=None, lon=None, aggregate_name='distance'):
-        self.baseQuery.get("aggs")[aggregate_name] = {
-            "geo_distance" : {
-                "field" : field,
-                "origin" : "{},{}".format(lat, lon),
-                "unit" : "mi",
-                "ranges" : [
-                    { "to" : 0 },
-                    { "from" : 0, "to" : 25 },
-                    { "from" : 25, "to" : 50 },
-                    { "from" : 50, "to" : 75 },
-                    { "from" : 75, "to" : 100 },
-                    { "from" : 100 }
-                ]
-            }}
-        return self.baseQuery
-
-    def match_phrase_prefix(self, field=None, value=None, boost=None, operation='should',analyzer=None):
-        _ = {
-            "match_phrase_prefix": {
-                field: {
-                    "query": value
-                }
+    def add_geo_aggreation(
+        self,
+        field: str = None,
+        lat: str = None,
+        lon: str = None,
+        aggregate_name: str = "distance",
+    ):
+        self.base_query.get("aggs")[aggregate_name] = {
+            "geo_distance": {
+                "field": field,
+                "origin": "{},{}".format(lat, lon),
+                "unit": "mi",
+                "ranges": [
+                    {"to": 0},
+                    {"from": 0, "to": 25},
+                    {"from": 25, "to": 50},
+                    {"from": 50, "to": 75},
+                    {"from": 75, "to": 100},
+                    {"from": 100},
+                ],
             }
         }
+        return self.base_query
+
+    def match_phrase_prefix(
+        self,
+        field: str = None,
+        value: str = None,
+        boost: float = None,
+        operation: str = Operation.SHOULD,
+        analyzer: str = None,
+    ):
+        fragment = {"match_phrase_prefix": {field: {"query": value}}}
 
         if boost is not None:
-            _["match_phrase_prefix"][field]["boost"] = boost
+            fragment["match_phrase_prefix"][field]["boost"] = boost
         if analyzer is not None:
-            _["match_phrase_prefix"][field]["analyzer"] = analyzer
-        self.baseQuery["query"]["bool"][operation].append(_)
-        return self.baseQuery
+            fragment["match_phrase_prefix"][field]["analyzer"] = analyzer
+        self.base_query["query"]["bool"][operation].append(fragment)
+        return self.base_query
 
-    def autocomplete_1(self, field=None,size=25, value=None, sort='des', operation='must'):
-        query = self.match_phrase_prefix(field=field,value=value, operation=operation)
-        query  =self.add_aggreation(field=field, size=size, sort=sort,aggregate_name='auto_complete' )
-        query = self.complete_aggreation()
+    def autocomplete_1(
+        self,
+        field: str = None,
+        size: int = 25,
+        value: str = None,
+        sort: str = Sort.DESC,
+        operation: str = Operation.MUST,
+    ):
+        self.match_phrase_prefix(field=field, value=value, operation=operation)
+        self.add_aggregation(
+            field=field, size=size, sort=sort, aggregate_name="auto_complete"
+        )
+        query = self.complete_aggregation()
         return query
-

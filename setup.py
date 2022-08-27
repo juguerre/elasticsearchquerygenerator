@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 def readme():
-    with open('README.md') as f:
+    with open("README.md") as f:
         README = f.read()
     return README
 
@@ -11,7 +11,7 @@ setup(
     name="elasticsearchquerygenerator",
     version="1.1.0",
     description="""
-    Create Complex Elastic Search Query in Seconds 
+    Create Complex Elastic Search Query in Seconds
     Please see documentation for more details
      """,
     long_description=readme(),
@@ -27,5 +27,5 @@ setup(
     ],
     packages=["elasticsearchquerygenerator"],
     include_package_data=True,
-    install_requires=[]
+    install_requires=[],
 )
