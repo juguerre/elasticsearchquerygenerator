@@ -6,13 +6,13 @@ from setuptools import setup
 
 site.ENABLE_USER_SITE = "--user" in sys.argv[1:]
 
-with open("./requirements.txt") as f:
-    install_requires = f.read().splitlines()
-
 print(os.getcwd())
 
 with open("./README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
+
+with open("./requirements.txt", "r", encoding="utf-8") as f:
+    install_requires = f.read().splitlines()
 
 
 setup(
